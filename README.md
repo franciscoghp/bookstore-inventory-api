@@ -5,6 +5,7 @@ API REST para gestionar el inventario de una cadena de librerías, con cálculo 
 - **Stack:** Node.js 20 · TypeScript · Express 5 · PostgreSQL (`pg`) · Zod (validación) · Vitest + Supertest (tests)
 - **Despliegue:** Vercel (serverless) + Postgres gestionado (Neon / Supabase)
 - **Documentación detallada:** [docs/DOCUMENTACION.md](docs/DOCUMENTACION.md) (decisiones de diseño, arquitectura, despliegue paso a paso)
+- **¿Primera vez con el proyecto?** Lee [docs/GUIA_PARA_ENTENDERLO.md](docs/GUIA_PARA_ENTENDERLO.md)
 
 > **URL pública:** `https://REEMPLAZA-CON-TU-URL.vercel.app`
 
@@ -32,6 +33,8 @@ npm run dev                 # http://localhost:3000 (recarga automática)
 ```
 
 Producción local: `npm run build && npm start`.
+
+**Probar sin instalar Postgres:** `npm run dev:mem` levanta la API con una base en memoria (datos temporales, solo para pruebas).
 
 ### Variables de entorno
 
