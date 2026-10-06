@@ -5,7 +5,7 @@ API REST para gestionar el inventario de una cadena de librerías, con cálculo 
 - **Stack:** Node.js 20 · TypeScript · Express 5 · PostgreSQL (`pg`) · Zod (validación) · Vitest + Supertest (tests)
 - **Despliegue:** Vercel (serverless) + Postgres gestionado (Neon / Supabase)
 
-> **URL pública:** `https://REEMPLAZA-CON-TU-URL.vercel.app`
+> **URL pública:** `https://bookstore-inventory-api-iota.vercel.app`
 
 ## Requisitos previos
 

@@ -2,7 +2,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const PROD_URL = process.argv[2] || 'https://REEMPLAZA-CON-TU-URL.vercel.app';
+const PROD_URL = process.argv[2] || 'https://bookstore-inventory-api-iota.vercel.app';
 const body = (o) => ({ mode: 'raw', raw: JSON.stringify(o, null, 2), options: { raw: { language: 'json' } } });
 const json = [{ key: 'Content-Type', value: 'application/json' }];
 
