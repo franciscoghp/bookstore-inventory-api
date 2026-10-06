@@ -2,16 +2,25 @@ import express, { NextFunction, Request, Response } from 'express';
 import { Db, lazyDb, migrate } from './db';
 import { booksRouter } from './books';
 import { HttpError, badRequest, notFound, unavailable } from './errors';
-import { RateProvider, fetchRate } from './exchange';
+import { RateProvider, createRateProvider } from './exchange';
+import { docsHtml, openapi } from './openapi';
 
 const DB_DOWN = ['ECONNREFUSED', 'ENOTFOUND', 'ETIMEDOUT', 'ECONNRESET', '57P01', '08006', '08001'];
 
-export function createApp(db: Db = lazyDb, getRate: RateProvider = fetchRate) {
+export function createApp(db: Db = lazyDb, getRate: RateProvider = createRateProvider(db)) {
   const app = express();
   app.use(express.json());
 
   app.get('/', (_req, res) => {
-    res.json({ name: 'bookstore-inventory-api', status: 'ok', books: '/books', health: '/health' });
+    res.json({ name: 'bookstore-inventory-api', status: 'ok', books: '/books', docs: '/docs', health: '/health' });
+  });
+
+  app.get('/openapi.json', (_req, res) => {
+    res.json(openapi);
+  });
+
+  app.get('/docs', (_req, res) => {
+    res.type('html').send(docsHtml);
   });
 
   app.get('/health', async (_req, res, next) => {

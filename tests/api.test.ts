@@ -149,3 +149,15 @@ describe('infraestructura', () => {
     expect((await request(app).get('/nope')).status).toBe(404);
   });
 });
+
+describe('documentación', () => {
+  it('sirve la especificación OpenAPI y la página /docs', async () => {
+    const spec = await request(app).get('/openapi.json');
+    expect(spec.status).toBe(200);
+    expect(spec.body.openapi).toMatch(/^3\./);
+    expect(Object.keys(spec.body.paths)).toContain('/books/{id}/calculate-price');
+    const docs = await request(app).get('/docs');
+    expect(docs.status).toBe(200);
+    expect(docs.text).toContain('swagger-ui');
+  });
+});

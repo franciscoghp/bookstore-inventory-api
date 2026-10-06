@@ -21,6 +21,12 @@ CREATE TABLE IF NOT EXISTS books (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS idx_books_stock ON books (stock_quantity);
+
+CREATE TABLE IF NOT EXISTS exchange_rate_cache (
+  id INTEGER PRIMARY KEY,
+  rates JSONB NOT NULL,
+  fetched_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
 `;
 
 let pool: Pool | undefined;

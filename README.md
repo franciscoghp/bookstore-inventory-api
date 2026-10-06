@@ -8,6 +8,7 @@ Desarrollada como prueba técnica (FullStack Developer, enfoque Backend) para Ne
 |---|---|
 | 🌐 **API en producción** | <https://bookstore-inventory-api-iota.vercel.app> |
 | ❤️ **Health check** | <https://bookstore-inventory-api-iota.vercel.app/health> |
+| 📖 **Documentación interactiva (Swagger)** | <https://bookstore-inventory-api-iota.vercel.app/docs> |
 | 📦 **Repositorio** | <https://github.com/franciscoghp/bookstore-inventory-api> |
 | 🧪 **Colección Postman** | [`postman/`](postman/) (apunta a producción) |
 
@@ -37,13 +38,15 @@ Desarrollada como prueba técnica (FullStack Developer, enfoque Backend) para Ne
 
 - **CRUD completo** de libros con paginación, búsqueda por categoría y consulta de stock bajo.
 - **Integración externa:** `POST /books/{id}/calculate-price` consulta [exchangerate-api.com](https://api.exchangerate-api.com/v4/latest/USD), aplica el margen de ganancia (40 %) y guarda el precio calculado.
-- **Resiliente:** si la API de cambio falla (red, timeout, HTTP ≠ 200, moneda inexistente), responde igualmente con una **tasa por defecto** e indica `rate_source: "fallback"`.
+- **Caché de la tasa de cambio** guardada en la base de datos (compartida entre instancias serverless, TTL configurable): menos latencia y menos llamadas a la API externa.
+- **Resiliente:** si la API de cambio falla (red, timeout, HTTP ≠ 200, moneda inexistente), usa la última tasa guardada o, si no hay, una **tasa por defecto**, e indica el origen en `rate_source` (`api`, `cache` o `fallback`).
+- **Documentación OpenAPI/Swagger** interactiva en `/docs`.
 - **Validación en dos capas:** esquemas Zod en la API y restricciones (`CHECK`, `UNIQUE`) en la base de datos.
 - **ISBN sin duplicados** aunque cambie el formato (`978-84-376-0494-7` = `9788437604947`).
 - **Errores consistentes:** formato JSON único con códigos 400, 404, 409, 500 y 503.
 - **Configuración 100 % por variables de entorno**, sin valores escondidos en el código: si falta una, la app no arranca y dice cuál.
 - **Dockerizada** (API + PostgreSQL con un solo comando) y **desplegada en la nube** (Vercel + Neon).
-- **21 pruebas automatizadas**, sin necesidad de base de datos real.
+- **26 pruebas automatizadas** (sin base de datos real) y **CI con GitHub Actions** en cada push.
 
 ---
 
@@ -147,6 +150,7 @@ Todas son **obligatorias**. No hay valores por defecto en el código: si falta o
 | `EXCHANGE_API_TIMEOUT_MS` | `4000` | Tiempo máximo de espera de la API externa (ms) |
 | `PROFIT_MARGIN_PERCENTAGE` | `40` | Margen de ganancia (%) |
 | `DEFAULT_EXCHANGE_RATE` | `1` | Tasa USD→local usada si la API falla y la moneda no tiene respaldo propio |
+| `EXCHANGE_RATE_CACHE_TTL_SECONDS` | `3600` | Segundos que se reutiliza la tasa guardada en la BD antes de volver a consultar la API |
 
 ---
 
@@ -281,7 +285,7 @@ curl -X POST $BASE/books/1/calculate-price -H "Content-Type: application/json" -
   "margin_percentage": 40,
   "selling_price_local": 19.96,
   "currency": "EUR",
-  "rate_source": "api",
+  "rate_source": "api",   // api | cache | fallback
   "calculation_timestamp": "2026-10-06T02:49:38.044Z"
 }
 ```
@@ -294,7 +298,7 @@ La tasa cambia cada día; los valores de arriba son solo un ejemplo.
 
 1. Lee el libro (`404` si no existe) y toma su `cost_usd`.
 2. Determina la **moneda local**: la del `supplier_country` (`ES` → `EUR`, `MX` → `MXN`, `CO` → `COP`, `VE` → `VES`…). Si no hay país o no está mapeado, usa `USD`. También se puede forzar con `{"currency": "XXX"}` en el body.
-3. Obtiene la tasa USD → moneda de la API externa (con *timeout*).
+3. Obtiene la tasa USD → moneda, en este orden: **caché en base de datos** (si es más reciente que `EXCHANGE_RATE_CACHE_TTL_SECONDS`) → **API externa** (con *timeout*, y refresca la caché) → **tasa por defecto**.
 4. Calcula, redondeando a 2 decimales:
    - `cost_local = cost_usd × exchange_rate`
    - `selling_price_local = cost_local × (1 + margen / 100)`
@@ -302,7 +306,9 @@ La tasa cambia cada día; los valores de arriba son solo un ejemplo.
 
 **Ejemplo del enunciado:** `15.99 × 0.85 = 13.59` → `13.59 × 1.40 = 19.03` (cubierto por un test).
 
-**Tolerancia a fallos:** si la API de cambio no responde, tarda más del timeout, devuelve un error HTTP o no incluye la moneda pedida, el endpoint **no falla**: usa una tasa de respaldo (tabla interna por moneda o `DEFAULT_EXCHANGE_RATE`) y lo indica con `"rate_source": "fallback"`.
+**Caché:** una sola consulta a la API trae todas las monedas y se guarda en la tabla `exchange_rate_cache`; mientras sea vigente, cualquier cálculo (de cualquier moneda) la reutiliza sin llamar a la API. Está en la base de datos, y no en memoria, porque en un entorno serverless cada instancia tiene su propia memoria y se apaga al quedar inactiva.
+
+**Tolerancia a fallos:** si la API de cambio no responde, tarda más del timeout, devuelve un error HTTP o no incluye la moneda pedida, el endpoint **no falla**: usa la última tasa guardada (aunque esté vencida) o, si no existe, una tasa de respaldo (tabla interna por moneda o `DEFAULT_EXCHANGE_RATE`). El origen se indica en `rate_source`: `api` (consultada ahora), `cache` (guardada en la BD) o `fallback` (tasa por defecto).
 
 ---
 
@@ -318,7 +324,7 @@ La tasa cambia cada día; los valores de arriba son solo un ejemplo.
 | Id no numérico, JSON mal formado, `supplier_country` inválido | `400` |
 | Base de datos no disponible | `503` |
 | Error inesperado (se registra en logs, no se expone al cliente) | `500` |
-| API de cambio caída al calcular precio | `200` con `rate_source: "fallback"` |
+| API de cambio caída al calcular precio | `200` con la última tasa guardada (`cache`) o la por defecto (`fallback`) |
 
 Todos los errores comparten el mismo formato:
 
@@ -341,7 +347,7 @@ Códigos internos: `BAD_REQUEST`, `NOT_FOUND`, `CONFLICT`, `SERVICE_UNAVAILABLE`
 ## 🧪 Pruebas
 
 ```bash
-npm test             # 21 pruebas
+npm test             # 26 pruebas
 npm run typecheck    # verificación de tipos
 ```
 
@@ -398,7 +404,8 @@ El `Dockerfile` (multi-stage, usuario no root y *healthcheck*) permite desplegar
 ├── src/
 │   ├── app.ts             # App Express: middlewares, health, manejo central de errores
 │   ├── books.ts           # Rutas, validación (Zod) y lógica de libros y precio
-│   ├── exchange.ts        # Cliente de tasas de cambio + tasas de respaldo
+│   ├── exchange.ts        # Tasas de cambio: caché en BD, API externa y tasas de respaldo
+│   ├── openapi.ts         # Especificación OpenAPI y página /docs
 │   ├── db.ts              # Pool de PostgreSQL y esquema
 │   ├── config.ts          # Lectura y validación de variables de entorno
 │   ├── errors.ts          # Errores HTTP tipados
@@ -409,6 +416,7 @@ El `Dockerfile` (multi-stage, usuario no root y *healthcheck*) permite desplegar
 ├── Dockerfile
 ├── docker-compose.yml     # API + PostgreSQL
 ├── vercel.json
+├── .github/workflows/ci.yml  # CI: typecheck, tests y build
 └── .env.example
 ```
 
@@ -425,4 +433,4 @@ El `Dockerfile` (multi-stage, usuario no root y *healthcheck*) permite desplegar
 
 ### Posibles mejoras
 
-Caché de la tasa de cambio (por ejemplo 1 hora), autenticación (API key/JWT), documentación OpenAPI/Swagger, migraciones versionadas, validación del dígito verificador del ISBN, *rate limiting* y pruebas de integración contra PostgreSQL real en CI.
+Autenticación (API key/JWT), migraciones versionadas, validación del dígito verificador del ISBN, *rate limiting* y pruebas de integración contra PostgreSQL real en CI (hoy los tests usan PostgreSQL en memoria).

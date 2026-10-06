@@ -9,6 +9,7 @@ export default defineConfig({
       EXCHANGE_API_TIMEOUT_MS: '4000',
       PROFIT_MARGIN_PERCENTAGE: '40',
       DEFAULT_EXCHANGE_RATE: '1',
+      EXCHANGE_RATE_CACHE_TTL_SECONDS: '3600',
     },
   },
 });

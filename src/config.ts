@@ -19,4 +19,5 @@ export const config = {
   exchangeTimeoutMs: requireNumber('EXCHANGE_API_TIMEOUT_MS'),
   marginPercentage: requireNumber('PROFIT_MARGIN_PERCENTAGE'),
   defaultExchangeRate: requireNumber('DEFAULT_EXCHANGE_RATE'),
+  exchangeCacheTtlSeconds: requireNumber('EXCHANGE_RATE_CACHE_TTL_SECONDS'),
 };
