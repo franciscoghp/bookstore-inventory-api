@@ -7,5 +7,5 @@ import { createApp } from './app';
 const { Pool } = newDb().adapters.createPg();
 
 createApp(new Pool()).listen(config.port, () => {
-  console.log(`API (BD en memoria) en http://localhost:${config.port}`);
+  console.log(`API (in-memory DB) on http://localhost:${config.port}`);
 });

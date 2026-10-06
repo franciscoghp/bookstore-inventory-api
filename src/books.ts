@@ -13,23 +13,23 @@ const isbnSchema = z
   .string()
   .trim()
   .refine((v) => /^[\dxX\s-]+$/.test(v) && /^(\d{9}[\dX]|\d{13})$/.test(normalizeIsbn(v)), {
-    message: 'isbn debe tener 10 o 13 dígitos (se permiten guiones; ISBN-10 puede terminar en X)',
+    message: 'isbn must have 10 or 13 digits (hyphens allowed; ISBN-10 may end in X)',
   });
 
 const base = {
   title: z.string().trim().min(1).max(255),
   author: z.string().trim().min(1).max(255),
   isbn: isbnSchema,
-  cost_usd: z.number('cost_usd debe ser numérico').gt(0, 'cost_usd debe ser mayor a 0').max(99999999),
+  cost_usd: z.number('cost_usd must be a number').gt(0, 'cost_usd must be greater than 0').max(99999999),
   stock_quantity: z
-    .number('stock_quantity debe ser numérico')
+    .number('stock_quantity must be a number')
     .int()
-    .min(0, 'stock_quantity no puede ser negativo'),
+    .min(0, 'stock_quantity cannot be negative'),
   category: z.string().trim().max(100).nullish(),
   supplier_country: z
     .string()
     .trim()
-    .length(2, 'supplier_country debe ser un código ISO de 2 letras')
+    .length(2, 'supplier_country must be a 2-letter ISO code')
     .transform((s) => s.toUpperCase())
     .nullish(),
 };
@@ -48,7 +48,7 @@ const parse = <T extends z.ZodType>(schema: T, data: unknown): z.output<T> => {
   const r = schema.safeParse(data);
   if (!r.success) {
     throw badRequest(
-      'Datos inválidos',
+      'Invalid data',
       r.error.issues.map((i) => ({ field: i.path.join('.'), message: i.message })),
     );
   }
@@ -57,7 +57,7 @@ const parse = <T extends z.ZodType>(schema: T, data: unknown): z.output<T> => {
 
 const parseId = (raw: string) => {
   const r = idSchema.safeParse(raw);
-  if (!r.success) throw badRequest('El id debe ser un entero positivo');
+  if (!r.success) throw badRequest('id must be a positive integer');
   return r.data;
 };
 
@@ -122,7 +122,7 @@ export function booksRouter(db: Db, getRate: RateProvider): Router {
       );
       res.status(201).json(serialize(rows[0]));
     } catch (e: any) {
-      if (e.code === '23505') throw conflict(`Ya existe un libro con el ISBN ${b.isbn}`);
+      if (e.code === '23505') throw conflict(`A book with ISBN ${b.isbn} already exists`);
       throw e;
     }
   }));
@@ -133,7 +133,7 @@ export function booksRouter(db: Db, getRate: RateProvider): Router {
 
   // Rutas fijas ANTES de /:id
   r.get('/search', wrap(async (req, res) => {
-    const { category } = parse(z.object({ category: z.string().trim().min(1, 'category es requerido') }), req.query);
+    const { category } = parse(z.object({ category: z.string().trim().min(1, 'category is required') }), req.query);
     res.json(await listWhere(db, 'WHERE LOWER(category) = LOWER($1)', [category], req.query, 'id ASC'));
   }));
 
@@ -145,7 +145,7 @@ export function booksRouter(db: Db, getRate: RateProvider): Router {
   r.get('/:id', wrap(async (req, res) => {
     const id = parseId(req.params.id as string);
     const { rows } = await db.query(`SELECT ${COLS} FROM books WHERE id = $1`, [id]);
-    if (!rows.length) throw notFound(`Libro ${id} no encontrado`);
+    if (!rows.length) throw notFound(`Book ${id} not found`);
     res.json(serialize(rows[0]));
   }));
 
@@ -158,10 +158,10 @@ export function booksRouter(db: Db, getRate: RateProvider): Router {
            category=$7, supplier_country=$8, updated_at=NOW() WHERE id=$9 RETURNING ${COLS}`,
         [b.title, b.author, b.isbn, normalizeIsbn(b.isbn), b.cost_usd, b.stock_quantity, b.category ?? null, b.supplier_country ?? null, id],
       );
-      if (!rows.length) throw notFound(`Libro ${id} no encontrado`);
+      if (!rows.length) throw notFound(`Book ${id} not found`);
       res.json(serialize(rows[0]));
     } catch (e: any) {
-      if (e.code === '23505') throw conflict(`Ya existe otro libro con el ISBN ${b.isbn}`);
+      if (e.code === '23505') throw conflict(`Another book with ISBN ${b.isbn} already exists`);
       throw e;
     }
   }));
@@ -169,7 +169,7 @@ export function booksRouter(db: Db, getRate: RateProvider): Router {
   r.delete('/:id', wrap(async (req, res) => {
     const id = parseId(req.params.id as string);
     const { rowCount } = await db.query('DELETE FROM books WHERE id = $1', [id]);
-    if (!rowCount) throw notFound(`Libro ${id} no encontrado`);
+    if (!rowCount) throw notFound(`Book ${id} not found`);
     res.status(204).end();
   }));
 
@@ -177,7 +177,7 @@ export function booksRouter(db: Db, getRate: RateProvider): Router {
     const id = parseId(req.params.id as string);
     const { currency: override } = parse(calcSchema, req.body);
     const { rows } = await db.query(`SELECT ${COLS} FROM books WHERE id = $1`, [id]);
-    if (!rows.length) throw notFound(`Libro ${id} no encontrado`);
+    if (!rows.length) throw notFound(`Book ${id} not found`);
     const book = serialize(rows[0]);
 
     const currency = override ?? currencyForCountry(book.supplier_country);

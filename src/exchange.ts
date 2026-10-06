@@ -32,10 +32,10 @@ export const fetchRate: RateProvider = async (currency) => {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = (await res.json()) as { rates?: Record<string, number> };
     const rate = data.rates?.[currency];
-    if (typeof rate !== 'number' || !(rate > 0)) throw new Error(`sin tasa para ${currency}`);
+    if (typeof rate !== 'number' || !(rate > 0)) throw new Error(`no rate for ${currency}`);
     return { rate, source: 'api' };
   } catch (err) {
-    console.warn(`[exchange] API fallida (${(err as Error).message}); usando tasa por defecto`);
+    console.warn(`[exchange] API failed (${(err as Error).message}); using default rate`);
     return { rate: FALLBACK_RATES[currency] ?? config.defaultExchangeRate, source: 'fallback' };
   }
 };

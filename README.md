@@ -4,8 +4,6 @@ API REST para gestionar el inventario de una cadena de librerías, con cálculo 
 
 - **Stack:** Node.js 20 · TypeScript · Express 5 · PostgreSQL (`pg`) · Zod (validación) · Vitest + Supertest (tests)
 - **Despliegue:** Vercel (serverless) + Postgres gestionado (Neon / Supabase)
-- **Documentación detallada:** [docs/DOCUMENTACION.md](docs/DOCUMENTACION.md) (decisiones de diseño, arquitectura, despliegue paso a paso)
-- **¿Primera vez con el proyecto?** Lee [docs/GUIA_PARA_ENTENDERLO.md](docs/GUIA_PARA_ENTENDERLO.md)
 
 > **URL pública:** `https://REEMPLAZA-CON-TU-URL.vercel.app`
 
@@ -71,7 +69,7 @@ npm run typecheck
 Errores: `400` validación · `404` no existe · `409` ISBN duplicado · `500` error interno · `503` BD no disponible. Formato:
 
 ```json
-{ "error": { "code": "BAD_REQUEST", "message": "Datos inválidos", "details": [{ "field": "cost_usd", "message": "cost_usd debe ser mayor a 0" }] } }
+{ "error": { "code": "BAD_REQUEST", "message": "Invalid data", "details": [{ "field": "cost_usd", "message": "cost_usd must be greater than 0" }] } }
 ```
 
 ### Ejemplos (curl)
@@ -140,6 +138,10 @@ postman/            Colección y entornos
 Dockerfile · docker-compose.yml · vercel.json
 ```
 
-## Despliegue
+## Despliegue (Vercel + Neon)
 
-Ver la guía paso a paso en [docs/DOCUMENTACION.md](docs/DOCUMENTACION.md#7-despliegue-en-vercel--neon).
+1. Importar el repositorio en Vercel (preset **Other**).
+2. En *Storage* crear una base **Neon (Postgres)** y conectarla al proyecto, lo que define `DATABASE_URL`.
+3. Redesplegar y comprobar `GET /health` → `{"status":"ok","database":"up"}`.
+4. La tabla se crea automáticamente en la primera petición a `/books`.
+5. Para apuntar Postman a la URL pública: `node postman/build.js https://<tu-proyecto>.vercel.app`.

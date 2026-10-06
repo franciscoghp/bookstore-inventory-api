@@ -312,7 +312,7 @@
           }
         },
         {
-          "name": "5b. Calcular precio forzando moneda (MXN)",
+          "name": "5b. Calcular precio forzando moneda (VES)",
           "event": [
             {
               "listen": "test",
@@ -320,7 +320,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('Status 200', () => pm.response.to.have.status(200));",
-                  "pm.test('moneda MXN', () => pm.expect(pm.response.json().currency).to.eql('MXN'));"
+                  "pm.test('moneda VES', () => pm.expect(pm.response.json().currency).to.eql('VES'));"
                 ]
               }
             }
@@ -335,7 +335,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"currency\": \"MXN\"\n}",
+              "raw": "{\n  \"currency\": \"VES\"\n}",
               "options": {
                 "raw": {
                   "language": "json"

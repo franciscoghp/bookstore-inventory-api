@@ -96,9 +96,9 @@ const collection = {
             "pm.test('margen 40%', () => pm.expect(j.selling_price_local).to.be.closeTo(j.cost_local * 1.4, 0.011));",
           ],
         }),
-        req('5b. Calcular precio forzando moneda (MXN)', 'POST', '/books/{{bookId}}/calculate-price', {
-          b: { currency: 'MXN' },
-          t: [status(200), "pm.test('moneda MXN', () => pm.expect(pm.response.json().currency).to.eql('MXN'));"],
+        req('5b. Calcular precio forzando moneda (VES)', 'POST', '/books/{{bookId}}/calculate-price', {
+          b: { currency: 'VES' },
+          t: [status(200), "pm.test('moneda VES', () => pm.expect(pm.response.json().currency).to.eql('VES'));"],
         }),
       ],
     },
