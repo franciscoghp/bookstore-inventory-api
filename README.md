@@ -30,7 +30,7 @@ cp .env.example .env        # y edita DATABASE_URL
 npm run dev                 # http://localhost:3000 (recarga automática)
 ```
 
-Producción local: `npm run build && npm start`.
+Producción local: `npm run build:server && npm start`.
 
 **Probar sin instalar Postgres:** `npm run dev:mem` levanta la API con una base en memoria (datos temporales, solo para pruebas).
 
