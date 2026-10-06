@@ -1,5 +1,5 @@
 import { Pool } from 'pg';
-import { config } from './config';
+import { requireEnv } from './config';
 
 export interface Db {
   query(text: string, params?: unknown[]): Promise<{ rows: any[]; rowCount: number | null }>;
@@ -28,10 +28,10 @@ let pool: Pool | undefined;
 /** Pool compartido (se reutiliza entre invocaciones en entornos serverless). */
 export function getPool(): Pool {
   if (!pool) {
-    if (!config.databaseUrl) throw new Error('DATABASE_URL is not set');
-    const local = /localhost|127\.0\.0\.1|@db[:/]/.test(config.databaseUrl);
+    const databaseUrl = requireEnv('DATABASE_URL');
+    const local = /localhost|127\.0\.0\.1|@db[:/]/.test(databaseUrl);
     pool = new Pool({
-      connectionString: config.databaseUrl,
+      connectionString: databaseUrl,
       ssl: local ? undefined : { rejectUnauthorized: false },
       max: 5,
     });

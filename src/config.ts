@@ -1,10 +1,22 @@
 import 'dotenv/config';
 
+/** Lee una variable de entorno obligatoria; si falta, falla con un mensaje claro. */
+export function requireEnv(name: string): string {
+  const value = process.env[name]?.trim();
+  if (!value) throw new Error(`Missing required environment variable: ${name}`);
+  return value;
+}
+
+function requireNumber(name: string): number {
+  const n = Number(requireEnv(name));
+  if (!Number.isFinite(n) || n <= 0) throw new Error(`Environment variable ${name} must be a positive number`);
+  return n;
+}
+
+// Sin valores por defecto: todo se configura por variables de entorno (ver .env.example).
 export const config = {
-  port: Number(process.env.PORT ?? 3000),
-  databaseUrl: process.env.DATABASE_URL,
-  exchangeApiUrl: process.env.EXCHANGE_API_URL ?? 'https://api.exchangerate-api.com/v4/latest/USD',
-  exchangeTimeoutMs: Number(process.env.EXCHANGE_API_TIMEOUT_MS ?? 4000),
-  marginPercentage: Number(process.env.PROFIT_MARGIN_PERCENTAGE ?? 40),
-  defaultExchangeRate: Number(process.env.DEFAULT_EXCHANGE_RATE ?? 1),
+  exchangeApiUrl: requireEnv('EXCHANGE_API_URL'),
+  exchangeTimeoutMs: requireNumber('EXCHANGE_API_TIMEOUT_MS'),
+  marginPercentage: requireNumber('PROFIT_MARGIN_PERCENTAGE'),
+  defaultExchangeRate: requireNumber('DEFAULT_EXCHANGE_RATE'),
 };

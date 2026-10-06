@@ -22,7 +22,10 @@ services:
     environment:
       DATABASE_URL: postgres://bookstore:bookstore@db:5432/bookstore
       EXCHANGE_API_URL: https://api.exchangerate-api.com/v4/latest/USD
+      PORT: "3000"
+      EXCHANGE_API_TIMEOUT_MS: "4000"
       PROFIT_MARGIN_PERCENTAGE: "40"
+      DEFAULT_EXCHANGE_RATE: "1"
     depends_on:
       db:
         condition: service_healthy

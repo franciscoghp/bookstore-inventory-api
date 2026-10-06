@@ -1,6 +1,8 @@
-import { config } from './config';
+import { requireEnv } from './config';
 import { createApp } from './app';
 
-createApp().listen(config.port, () => {
-  console.log(`API listening on http://localhost:${config.port}`);
+const port = Number(requireEnv('PORT'));
+
+createApp().listen(port, () => {
+  console.log(`API listening on http://localhost:${port}`);
 });

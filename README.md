@@ -36,14 +36,16 @@ Producción local: `npm run build && npm start`.
 
 ### Variables de entorno
 
-| Variable | Default | Descripción |
+Todas son **obligatorias** (no hay valores por defecto en el código): si falta una, la app no arranca y indica cuál. Ver `.env.example`.
+
+| Variable | Ejemplo | Descripción |
 |---|---|---|
-| `DATABASE_URL` | – (**obligatoria**) | Cadena de conexión Postgres |
-| `PORT` | `3000` | Puerto (solo servidor local/Docker) |
+| `DATABASE_URL` | `postgres://user:pass@host:5432/db` | Cadena de conexión Postgres |
+| `PORT` | `3000` | Puerto (solo local/Docker; Vercel no la usa) |
 | `EXCHANGE_API_URL` | `https://api.exchangerate-api.com/v4/latest/USD` | API de tasas de cambio |
-| `EXCHANGE_API_TIMEOUT_MS` | `4000` | Timeout de la API externa |
-| `PROFIT_MARGIN_PERCENTAGE` | `40` | Margen de ganancia |
-| `DEFAULT_EXCHANGE_RATE` | `1` | Tasa si la API falla y la moneda no tiene respaldo |
+| `EXCHANGE_API_TIMEOUT_MS` | `4000` | Timeout de la API externa (ms) |
+| `PROFIT_MARGIN_PERCENTAGE` | `40` | Margen de ganancia (%) |
+| `DEFAULT_EXCHANGE_RATE` | `1` | Tasa USD→local si la API falla y la moneda no tiene respaldo |
 
 ## Tests
 
@@ -141,7 +143,8 @@ Dockerfile · docker-compose.yml · vercel.json
 ## Despliegue (Vercel + Neon)
 
 1. Importar el repositorio en Vercel (preset **Other**).
-2. En *Storage* crear una base **Neon (Postgres)** y conectarla al proyecto, lo que define `DATABASE_URL`.
-3. Redesplegar y comprobar `GET /health` → `{"status":"ok","database":"up"}`.
-4. La tabla se crea automáticamente en la primera petición a `/books`.
-5. Para apuntar Postman a la URL pública: `node postman/build.js https://<tu-proyecto>.vercel.app`.
+2. Definir las variables de entorno de `.env.example` (todas son obligatorias; `PORT` no hace falta en Vercel).
+3. En *Storage* crear una base **Neon (Postgres)** y conectarla al proyecto, lo que define `DATABASE_URL`.
+4. Redesplegar y comprobar `GET /health` → `{"status":"ok","database":"up"}`.
+5. La tabla se crea automáticamente en la primera petición a `/books`.
+6. Para apuntar Postman a la URL pública: `node postman/build.js https://<tu-proyecto>.vercel.app`.
